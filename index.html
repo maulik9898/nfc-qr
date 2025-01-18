@@ -252,6 +252,13 @@
                     this.updateNFCStatus('Scanning for NFC tag...', 'warning');
                     
                     ndef.addEventListener("reading", ({ serialNumber }) => {
+                        // Check if NFC already exists
+                        if (this.mappings.has(serialNumber)) {
+                            this.updateNFCStatus('NFC tag already mapped!', 'error', serialNumber);
+                            if (navigator.vibrate) navigator.vibrate([100, 100, 100, 100]); // Error pattern
+                            return;
+                        }
+                        
                         this.currentNFCSerial = serialNumber;
                         this.updateNFCStatus('NFC Tag Detected', 'success', serialNumber);
                         if (navigator.vibrate) navigator.vibrate(200);
@@ -270,12 +277,23 @@
             }
 
             handleQRCode(qrCode) {
-                if (this.currentNFCSerial) {
-                    // Store mapping with timestamp
-                    this.mappings.set(this.currentNFCSerial, qrCode);
-                    this.timestamps.set(this.currentNFCSerial, Date.now());
-                    document.getElementById('qrStatus').textContent = 'Paired Successfully';
-                    document.getElementById('qrStatus').className = 'status success';
+                if (!this.currentNFCSerial) return;
+
+                // Check for duplicate QR code
+                for (const [_, existingQR] of this.mappings) {
+                    if (existingQR === qrCode) {
+                        document.getElementById('qrStatus').textContent = 'QR code already mapped!';
+                        document.getElementById('qrStatus').className = 'status error';
+                        if (navigator.vibrate) navigator.vibrate([100, 100, 100, 100]); // Error pattern
+                        return;
+                    }
+                }
+
+                // Proceed with mapping if no duplicates
+                this.mappings.set(this.currentNFCSerial, qrCode);
+                this.timestamps.set(this.currentNFCSerial, Date.now());
+                document.getElementById('qrStatus').textContent = 'Paired Successfully';
+                document.getElementById('qrStatus').className = 'status success';
                     this.saveToLocalStorage();
                     this.renderTable();
                     
