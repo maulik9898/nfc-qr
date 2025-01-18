@@ -7,35 +7,18 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <style>
         :root {
-            /* Core system colors - optimized for OLED displays */
             --black-base: #171717;
             --black-surface: #1c1c1c;
             --black-elevated: #242424;
-            --black-active: #2a2a2a;
-            
-            /* Text hierarchy - WCAG AAA compliant */
+            --accent: #7c7fff;
+            --accent-hover: #6e6ee5;
             --text-primary: rgba(255, 255, 255, 0.87);
             --text-secondary: rgba(255, 255, 255, 0.60);
-            --text-tertiary: rgba(255, 255, 255, 0.38);
-            
-            /* Interactive colors */
-            --accent: #7c7fff;       /* Primary action color */
-            --accent-hover: #6e6ee5;  /* Darker state for hover */
-            
-            /* Status indicators */
             --success: #4caf50;
             --warning: #ff9800;
             --error: #f44336;
-            
-            /* Layout grid */
-            --space-1: 4px;
-            --space-2: 8px;
-            --space-3: 16px;
-            --space-4: 24px;
-            
-            /* System properties */
+            --space: 16px;
             --radius: 8px;
-            --transition: 200ms ease;
         }
 
         * {
@@ -50,70 +33,81 @@
             color: var(--text-primary);
             line-height: 1.5;
             -webkit-font-smoothing: antialiased;
+            padding: var(--space);
         }
 
         .container {
             max-width: 600px;
             margin: 0 auto;
-            padding: var(--space-3);
         }
 
-        h1 {
-            font-size: 20px;
-            font-weight: 500;
-            margin-bottom: var(--space-4);
-            text-align: center;
-        }
-
-        .scan-section {
-            background: var(--black-surface);
-            border-radius: var(--radius);
-            padding: var(--space-3);
-            margin-bottom: var(--space-3);
-        }
-
-        h2 {
-            font-size: 14px;
-            font-weight: normal;
-            color: var(--text-secondary);
-            margin-bottom: var(--space-2);
-        }
-
-        button {
+        /* Primary action button */
+        #nfcButton {
             width: 100%;
-            padding: var(--space-3);
-            background: var(--black-elevated);
+            height: 56px;
+            background: var(--accent);
             color: var(--text-primary);
             border: none;
             border-radius: var(--radius);
             font-size: 16px;
+            font-weight: 500;
+            margin-bottom: var(--space);
             cursor: pointer;
-            transition: background var(--transition);
-            min-height: 48px;
-            margin-bottom: var(--space-2);
         }
 
-        button:active {
-            background: var(--black-active);
+        #nfcButton:active {
+            background: var(--accent-hover);
+        }
+
+        /* Status display */
+        .status-container {
+            background: var(--black-surface);
+            border-radius: var(--radius);
+            padding: var(--space);
+            margin-bottom: var(--space);
         }
 
         .status {
-            padding: var(--space-2) var(--space-3);
-            border-radius: var(--radius);
             font-size: 14px;
-            background: var(--black-elevated);
-            margin-bottom: var(--space-2);
+            color: var(--text-secondary);
+            margin-bottom: 4px;
         }
 
-        .status.success { color: var(--success); }
-        .status.warning { color: var(--warning); }
-        .status.error { color: var(--error); }
+        .serial {
+            font-family: monospace;
+            font-size: 16px;
+            color: var(--text-primary);
+        }
 
-        #reader {
+        .success { color: var(--success); }
+        .warning { color: var(--warning); }
+        .error { color: var(--error); }
+
+        /* QR Scanner */
+        .scanner-container {
             background: var(--black-surface);
             border-radius: var(--radius);
+            padding: var(--space);
+            margin-bottom: var(--space);
             overflow: hidden;
-            margin-bottom: var(--space-2);
+        }
+
+        #reader {
+            width: 100%;
+            background: var(--black-surface);
+        }
+
+        /* Hide unnecessary QR scanner UI elements */
+        #reader select, #reader img[alt="Info icon"] {
+            display: none !important;
+        }
+
+        /* Data Table */
+        .table-container {
+            background: var(--black-surface);
+            border-radius: var(--radius);
+            padding: var(--space);
+            overflow-x: auto;
         }
 
         table {
@@ -121,75 +115,70 @@
             border-collapse: separate;
             border-spacing: 0;
             font-size: 14px;
-            margin-top: var(--space-3);
-        }
-
-        th, td {
-            padding: var(--space-3);
-            text-align: left;
-            border-bottom: 1px solid var(--black-elevated);
         }
 
         th {
+            text-align: left;
+            padding: 12px 16px;
             color: var(--text-secondary);
             font-weight: normal;
+            border-bottom: 1px solid var(--black-elevated);
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--black-elevated);
         }
 
         td button {
-            width: 32px;
-            height: 32px;
-            min-height: unset;
-            padding: 0;
-            margin: 0;
+            width: 28px;
+            height: 28px;
             background: var(--error);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
             opacity: 0.8;
         }
 
-        /* QR Scanner Overrides */
-        #reader * {
-            background: var(--black-surface) !important;
-            color: var(--text-primary) !important;
-            border-color: var(--black-elevated) !important;
+        .controls {
+            display: flex;
+            gap: var(--space);
+            margin-bottom: var(--space);
         }
 
-        #reader img[alt="Info icon"] {
-            display: none;
-        }
-
-        @media (min-width: 640px) {
-            .scan-container {
-                display: flex;
-                gap: var(--space-3);
-            }
-
-            .scan-section {
-                flex: 1;
-            }
+        .controls button {
+            flex: 1;
+            height: 44px;
+            background: var(--black-elevated);
+            color: var(--text-primary);
+            border: none;
+            border-radius: var(--radius);
+            font-size: 14px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>NFC-QR Mapper</h1>
-        
-        <div class="scan-container">
-            <div class="scan-section">
-                <h2>1. NFC Tag</h2>
-                <button id="nfcButton">Start NFC Scan</button>
-                <div id="nfcStatus" class="status"></div>
-            </div>
-            
-            <div class="scan-section">
-                <h2>2. QR Code</h2>
-                <div id="reader"></div>
-                <div id="qrStatus" class="status"></div>
-            </div>
+        <button id="nfcButton">Start NFC Scan</button>
+
+        <div class="status-container">
+            <div id="nfcStatus" class="status">Ready to scan NFC tag...</div>
+            <div id="nfcSerial" class="serial"></div>
         </div>
 
-        <div class="scan-section">
+        <div class="scanner-container">
+            <div id="reader"></div>
+            <div id="qrStatus" class="status"></div>
+        </div>
+
+        <div class="controls">
             <button id="exportButton">Export CSV</button>
             <button id="clearButton">Clear All</button>
+        </div>
 
+        <div class="table-container">
             <table>
                 <thead>
                     <tr>
@@ -208,7 +197,7 @@
             constructor() {
                 this.mappings = new Map();
                 this.currentNFCSerial = null;
-                this.html5QrCode = new Html5Qrcode("reader");
+                this.setupQRScanner();
                 this.setupEventListeners();
                 this.loadFromLocalStorage();
                 this.renderTable();
@@ -218,30 +207,10 @@
                 document.getElementById('nfcButton').addEventListener('click', () => this.startNFCScan());
                 document.getElementById('exportButton').addEventListener('click', () => this.exportCSV());
                 document.getElementById('clearButton').addEventListener('click', () => this.clearAll());
-                this.setupQRScanner();
-            }
-
-            async startNFCScan() {
-                try {
-                    const ndef = new NDEFReader();
-                    await ndef.scan();
-                    this.updateStatus('nfcStatus', 'Ready to scan...', 'waiting');
-                    
-                    ndef.addEventListener("reading", ({ serialNumber }) => {
-                        this.currentNFCSerial = serialNumber;
-                        this.updateStatus('nfcStatus', `NFC: ${serialNumber.slice(-8)}`, 'success');
-                        this.startQRScan();
-                        // Haptic feedback
-                        if (navigator.vibrate) {
-                            navigator.vibrate(200);
-                        }
-                    });
-                } catch (error) {
-                    this.updateStatus('nfcStatus', 'NFC failed: ' + error, 'error');
-                }
             }
 
             setupQRScanner() {
+                this.html5QrCode = new Html5Qrcode("reader");
                 const config = {
                     fps: 10,
                     qrbox: { width: 250, height: 250 },
@@ -252,35 +221,51 @@
                     { facingMode: "environment" },
                     config,
                     this.handleQRCode.bind(this)
-                );
+                ).catch(err => {
+                    console.error("QR Scanner setup failed:", err);
+                    document.getElementById('qrStatus').textContent = "Camera initialization failed";
+                    document.getElementById('qrStatus').className = 'status error';
+                });
             }
 
-            startQRScan() {
-                this.updateStatus('qrStatus', 'Scan QR...', 'waiting');
+            async startNFCScan() {
+                try {
+                    const ndef = new NDEFReader();
+                    await ndef.scan();
+                    this.updateNFCStatus('Scanning for NFC tag...', 'warning');
+                    
+                    ndef.addEventListener("reading", ({ serialNumber }) => {
+                        this.currentNFCSerial = serialNumber;
+                        this.updateNFCStatus('NFC Tag Detected', 'success', serialNumber);
+                        if (navigator.vibrate) navigator.vibrate(200);
+                    });
+                } catch (error) {
+                    this.updateNFCStatus('NFC scan failed: ' + error, 'error');
+                }
+            }
+
+            updateNFCStatus(message, type, serial = '') {
+                const status = document.getElementById('nfcStatus');
+                const serialEl = document.getElementById('nfcSerial');
+                status.textContent = message;
+                status.className = `status ${type}`;
+                serialEl.textContent = serial;
             }
 
             handleQRCode(qrCode) {
                 if (this.currentNFCSerial) {
                     this.mappings.set(this.currentNFCSerial, qrCode);
-                    this.updateStatus('qrStatus', `Paired ✓`, 'success');
+                    document.getElementById('qrStatus').textContent = 'Paired Successfully';
+                    document.getElementById('qrStatus').className = 'status success';
                     this.saveToLocalStorage();
                     this.renderTable();
                     
-                    // Strong haptic feedback for successful pair
-                    if (navigator.vibrate) {
-                        navigator.vibrate([200, 100, 200]);
-                    }
+                    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
                     
-                    // Auto-continue
                     this.currentNFCSerial = null;
+                    this.updateNFCStatus('Ready for next scan', 'warning');
                     setTimeout(() => this.startNFCScan(), 1000);
                 }
-            }
-
-            deleteMapping(nfcSerial) {
-                this.mappings.delete(nfcSerial);
-                this.saveToLocalStorage();
-                this.renderTable();
             }
 
             renderTable() {
@@ -289,7 +274,7 @@
                 
                 for (const [nfc, qr] of this.mappings) {
                     const row = tbody.insertRow();
-                    row.insertCell(0).textContent = nfc.slice(-8);
+                    row.insertCell(0).textContent = nfc;
                     row.insertCell(1).textContent = qr;
                     
                     const deleteButton = document.createElement('button');
@@ -299,13 +284,19 @@
                 }
             }
 
+            deleteMapping(nfcSerial) {
+                this.mappings.delete(nfcSerial);
+                this.saveToLocalStorage();
+                this.renderTable();
+            }
+
             exportCSV() {
-                let csv = 'NFC Serial,QR Code\n';
+                const csv = ['NFC Serial,QR Code'];
                 for (const [nfc, qr] of this.mappings) {
-                    csv += `${nfc},${qr}\n`;
+                    csv.push(`${nfc},${qr}`);
                 }
                 
-                const blob = new Blob([csv], { type: 'text/csv' });
+                const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -320,12 +311,6 @@
                     this.saveToLocalStorage();
                     this.renderTable();
                 }
-            }
-
-            updateStatus(elementId, message, type) {
-                const element = document.getElementById(elementId);
-                element.textContent = message;
-                element.className = `status ${type}`;
             }
 
             saveToLocalStorage() {
