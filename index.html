@@ -108,6 +108,8 @@
             border-radius: var(--radius);
             padding: var(--space);
             overflow-x: auto;
+            max-width: 100%;
+            -webkit-overflow-scrolling: touch;
         }
 
         table {
@@ -115,6 +117,19 @@
             border-collapse: separate;
             border-spacing: 0;
             font-size: 14px;
+            table-layout: fixed;
+        }
+        
+        /* Column widths */
+        th:nth-child(1), td:nth-child(1) { width: 40%; }
+        th:nth-child(2), td:nth-child(2) { width: 50%; }
+        th:nth-child(3), td:nth-child(3) { width: 10%; }
+
+        /* Ensure text truncation */
+        td {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         th {
@@ -195,7 +210,9 @@
     <script>
         class NFCQRMapper {
             constructor() {
+                // Initialize with timestamp-based storage
                 this.mappings = new Map();
+                this.timestamps = new Map(); // Track entry timestamps
                 this.currentNFCSerial = null;
                 this.setupQRScanner();
                 this.setupEventListeners();
@@ -254,7 +271,9 @@
 
             handleQRCode(qrCode) {
                 if (this.currentNFCSerial) {
+                    // Store mapping with timestamp
                     this.mappings.set(this.currentNFCSerial, qrCode);
+                    this.timestamps.set(this.currentNFCSerial, Date.now());
                     document.getElementById('qrStatus').textContent = 'Paired Successfully';
                     document.getElementById('qrStatus').className = 'status success';
                     this.saveToLocalStorage();
@@ -272,14 +291,31 @@
                 const tbody = document.getElementById('mappingTable');
                 tbody.innerHTML = '';
                 
-                for (const [nfc, qr] of this.mappings) {
+                // Convert to array and sort by timestamp (newest first)
+                const entries = Array.from(this.mappings.entries())
+                    .map(([nfc, qr]) => ({
+                        nfc,
+                        qr,
+                        timestamp: this.timestamps.get(nfc) || 0
+                    }))
+                    .sort((a, b) => b.timestamp - a.timestamp);
+                
+                for (const entry of entries) {
                     const row = tbody.insertRow();
-                    row.insertCell(0).textContent = nfc;
-                    row.insertCell(1).textContent = qr;
+                    
+                    // NFC cell with tooltip
+                    const nfcCell = row.insertCell(0);
+                    nfcCell.textContent = entry.nfc;
+                    nfcCell.title = entry.nfc; // Show full on hover
+                    
+                    // QR cell with tooltip
+                    const qrCell = row.insertCell(1);
+                    qrCell.textContent = entry.qr;
+                    qrCell.title = entry.qr; // Show full on hover
                     
                     const deleteButton = document.createElement('button');
                     deleteButton.textContent = '×';
-                    deleteButton.onclick = () => this.deleteMapping(nfc);
+                    deleteButton.onclick = () => this.deleteMapping(entry.nfc);
                     row.insertCell(2).appendChild(deleteButton);
                 }
             }
@@ -314,13 +350,27 @@
             }
 
             saveToLocalStorage() {
-                localStorage.setItem('nfcQrMappings', JSON.stringify(Array.from(this.mappings.entries())));
+                // Save both mappings and timestamps
+                const data = {
+                    mappings: Array.from(this.mappings.entries()),
+                    timestamps: Array.from(this.timestamps.entries())
+                };
+                localStorage.setItem('nfcQrMappings', JSON.stringify(data));
             }
 
             loadFromLocalStorage() {
                 const stored = localStorage.getItem('nfcQrMappings');
                 if (stored) {
-                    this.mappings = new Map(JSON.parse(stored));
+                    try {
+                        const data = JSON.parse(stored);
+                        this.mappings = new Map(data.mappings);
+                        this.timestamps = new Map(data.timestamps);
+                    } catch (error) {
+                        console.error('Error loading stored data:', error);
+                        // Reset if data is corrupted
+                        this.mappings = new Map();
+                        this.timestamps = new Map();
+                    }
                 }
             }
         }
