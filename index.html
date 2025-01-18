@@ -315,10 +315,16 @@
             }
 
             deleteMapping(nfcSerial) {
-                this.mappings.delete(nfcSerial);
-                this.timestamps.delete(nfcSerial);
-                this.saveToLocalStorage();
-                this.renderTable();
+                // Find the original NFC ID (with colons) from the stored mappings
+                const originalNfcId = Array.from(this.mappings.keys())
+                    .find(key => key.replace(/:/g, '') === nfcSerial);
+                
+                if (originalNfcId) {
+                    this.mappings.delete(originalNfcId);
+                    this.timestamps.delete(originalNfcId);
+                    this.saveToLocalStorage();
+                    this.renderTable();
+                }
             }
 
             exportCSV() {
