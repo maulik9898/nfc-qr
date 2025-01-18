@@ -7,16 +7,23 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <style>
         :root {
+            /* System colors - calibrated for OLED displays */
             --black-base: #171717;
             --black-surface: #1c1c1c;
             --black-elevated: #242424;
             --accent: #7c7fff;
             --accent-hover: #6e6ee5;
+            
+            /* Typography colors - WCAG AAA compliant */
             --text-primary: rgba(255, 255, 255, 0.87);
             --text-secondary: rgba(255, 255, 255, 0.60);
+            
+            /* Status indicators */
             --success: #4caf50;
             --warning: #ff9800;
             --error: #f44336;
+            
+            /* Layout units */
             --space: 16px;
             --radius: 8px;
         }
@@ -53,13 +60,14 @@
             font-weight: 500;
             margin-bottom: var(--space);
             cursor: pointer;
+            transition: background 0.2s ease;
         }
 
         #nfcButton:active {
             background: var(--accent-hover);
         }
 
-        /* Status display */
+        /* Status displays */
         .status-container {
             background: var(--black-surface);
             border-radius: var(--radius);
@@ -83,7 +91,7 @@
         .warning { color: var(--warning); }
         .error { color: var(--error); }
 
-        /* QR Scanner */
+        /* QR Scanner container */
         .scanner-container {
             background: var(--black-surface);
             border-radius: var(--radius);
@@ -94,68 +102,16 @@
 
         #reader {
             width: 100%;
-            background: var(--black-surface);
+            background: var(--black-surface) !important;
         }
 
-        /* Hide unnecessary QR scanner UI elements */
-        #reader select, #reader img[alt="Info icon"] {
+        /* Hide QR scanner UI elements */
+        #reader select, 
+        #reader img[alt="Info icon"] {
             display: none !important;
         }
 
-        /* Data Table */
-        .table-container {
-            background: var(--black-surface);
-            border-radius: var(--radius);
-            padding: var(--space);
-            overflow-x: auto;
-            max-width: 100%;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            font-size: 14px;
-            table-layout: fixed;
-        }
-        
-        /* Column widths */
-        th:nth-child(1), td:nth-child(1) { width: 40%; }
-        th:nth-child(2), td:nth-child(2) { width: 50%; }
-        th:nth-child(3), td:nth-child(3) { width: 10%; }
-
-        /* Ensure text truncation */
-        td {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        th {
-            text-align: left;
-            padding: 12px 16px;
-            color: var(--text-secondary);
-            font-weight: normal;
-            border-bottom: 1px solid var(--black-elevated);
-        }
-
-        td {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--black-elevated);
-        }
-
-        td button {
-            width: 28px;
-            height: 28px;
-            background: var(--error);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            opacity: 0.8;
-        }
-
+        /* Control buttons */
         .controls {
             display: flex;
             gap: var(--space);
@@ -171,6 +127,66 @@
             border-radius: var(--radius);
             font-size: 14px;
             cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .controls button:active {
+            opacity: 0.9;
+        }
+
+        /* Data table */
+        .table-container {
+            background: var(--black-surface);
+            border-radius: var(--radius);
+            padding: var(--space);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 14px;
+            table-layout: fixed;
+        }
+
+        /* Column distribution */
+        th:nth-child(1), td:nth-child(1) { width: 10%; }  /* Delete */
+        th:nth-child(2), td:nth-child(2) { width: 40%; }  /* NFC */
+        th:nth-child(3), td:nth-child(3) { width: 50%; }  /* QR */
+
+        th {
+            text-align: left;
+            padding: 12px 16px;
+            color: var(--text-secondary);
+            font-weight: normal;
+            border-bottom: 1px solid var(--black-elevated);
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--black-elevated);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Delete button styling */
+        td button {
+            width: 28px;
+            height: 28px;
+            background: var(--error);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.2s ease;
+        }
+
+        td button:active {
+            opacity: 1;
         }
     </style>
 </head>
@@ -197,9 +213,9 @@
             <table>
                 <thead>
                     <tr>
+                        <th></th>
                         <th>NFC ID</th>
                         <th>QR Code</th>
-                        <th></th>
                     </tr>
                 </thead>
                 <tbody id="mappingTable"></tbody>
@@ -210,9 +226,8 @@
     <script>
         class NFCQRMapper {
             constructor() {
-                // Initialize with timestamp-based storage
                 this.mappings = new Map();
-                this.timestamps = new Map(); // Track entry timestamps
+                this.timestamps = new Map();
                 this.currentNFCSerial = null;
                 this.setupQRScanner();
                 this.setupEventListeners();
@@ -252,10 +267,10 @@
                     this.updateNFCStatus('Scanning for NFC tag...', 'warning');
                     
                     ndef.addEventListener("reading", ({ serialNumber }) => {
-                        // Check if NFC already exists
+                        // Check for duplicate NFC
                         if (this.mappings.has(serialNumber)) {
                             this.updateNFCStatus('NFC tag already mapped!', 'error', serialNumber);
-                            if (navigator.vibrate) navigator.vibrate([100, 100, 100, 100]); // Error pattern
+                            if (navigator.vibrate) navigator.vibrate([100, 100, 100, 100]);
                             return;
                         }
                         
@@ -273,7 +288,7 @@
                 const serialEl = document.getElementById('nfcSerial');
                 status.textContent = message;
                 status.className = `status ${type}`;
-                serialEl.textContent = serial;
+                serialEl.textContent = serial.replace(/:/g, '');
             }
 
             handleQRCode(qrCode) {
@@ -284,35 +299,34 @@
                     if (existingQR === qrCode) {
                         document.getElementById('qrStatus').textContent = 'QR code already mapped!';
                         document.getElementById('qrStatus').className = 'status error';
-                        if (navigator.vibrate) navigator.vibrate([100, 100, 100, 100]); // Error pattern
+                        if (navigator.vibrate) navigator.vibrate([100, 100, 100, 100]);
                         return;
                     }
                 }
 
-                // Proceed with mapping if no duplicates
+                // Process valid mapping
                 this.mappings.set(this.currentNFCSerial, qrCode);
                 this.timestamps.set(this.currentNFCSerial, Date.now());
                 document.getElementById('qrStatus').textContent = 'Paired Successfully';
                 document.getElementById('qrStatus').className = 'status success';
-                    this.saveToLocalStorage();
-                    this.renderTable();
-                    
-                    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-                    
-                    this.currentNFCSerial = null;
-                    this.updateNFCStatus('Ready for next scan', 'warning');
-                    setTimeout(() => this.startNFCScan(), 1000);
-                }
-            
+                this.saveToLocalStorage();
+                this.renderTable();
+                
+                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                
+                this.currentNFCSerial = null;
+                this.updateNFCStatus('Ready for next scan', 'warning');
+                setTimeout(() => this.startNFCScan(), 1000);
+            }
 
             renderTable() {
                 const tbody = document.getElementById('mappingTable');
                 tbody.innerHTML = '';
                 
-                // Convert to array and sort by timestamp (newest first)
+                // Sort entries by timestamp (newest first)
                 const entries = Array.from(this.mappings.entries())
                     .map(([nfc, qr]) => ({
-                        nfc,
+                        nfc: nfc.replace(/:/g, ''),
                         qr,
                         timestamp: this.timestamps.get(nfc) || 0
                     }))
@@ -321,25 +335,28 @@
                 for (const entry of entries) {
                     const row = tbody.insertRow();
                     
-                    // NFC cell with tooltip
-                    const nfcCell = row.insertCell(0);
-                    nfcCell.textContent = entry.nfc;
-                    nfcCell.title = entry.nfc; // Show full on hover
-                    
-                    // QR cell with tooltip
-                    const qrCell = row.insertCell(1);
-                    qrCell.textContent = entry.qr;
-                    qrCell.title = entry.qr; // Show full on hover
-                    
+                    // Delete button
+                    const deleteCell = row.insertCell(0);
                     const deleteButton = document.createElement('button');
                     deleteButton.textContent = '×';
                     deleteButton.onclick = () => this.deleteMapping(entry.nfc);
-                    row.insertCell(2).appendChild(deleteButton);
+                    deleteCell.appendChild(deleteButton);
+                    
+                    // NFC ID
+                    const nfcCell = row.insertCell(1);
+                    nfcCell.textContent = entry.nfc;
+                    nfcCell.title = entry.nfc;
+                    
+                    // QR Code
+                    const qrCell = row.insertCell(2);
+                    qrCell.textContent = entry.qr;
+                    qrCell.title = entry.qr;
                 }
             }
 
             deleteMapping(nfcSerial) {
                 this.mappings.delete(nfcSerial);
+                this.timestamps.delete(nfcSerial);
                 this.saveToLocalStorage();
                 this.renderTable();
             }
@@ -347,7 +364,7 @@
             exportCSV() {
                 const csv = ['NFC Serial,QR Code'];
                 for (const [nfc, qr] of this.mappings) {
-                    csv.push(`${nfc},${qr}`);
+                    csv.push(`${nfc.replace(/:/g, '')},${qr}`);
                 }
                 
                 const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
@@ -362,13 +379,13 @@
             clearAll() {
                 if (confirm('Clear all mappings?')) {
                     this.mappings.clear();
+                    this.timestamps.clear();
                     this.saveToLocalStorage();
                     this.renderTable();
                 }
             }
 
             saveToLocalStorage() {
-                // Save both mappings and timestamps
                 const data = {
                     mappings: Array.from(this.mappings.entries()),
                     timestamps: Array.from(this.timestamps.entries())
@@ -385,7 +402,6 @@
                         this.timestamps = new Map(data.timestamps);
                     } catch (error) {
                         console.error('Error loading stored data:', error);
-                        // Reset if data is corrupted
                         this.mappings = new Map();
                         this.timestamps = new Map();
                     }
