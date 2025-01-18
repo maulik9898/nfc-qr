@@ -7,40 +7,31 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <style>
         :root {
-            /* System colors - calibrated for OLED displays */
             --black-base: #171717;
             --black-surface: #1c1c1c;
             --black-elevated: #242424;
             --accent: #7c7fff;
             --accent-hover: #6e6ee5;
-            
-            /* Typography colors - WCAG AAA compliant */
             --text-primary: rgba(255, 255, 255, 0.87);
             --text-secondary: rgba(255, 255, 255, 0.60);
-            
-            /* Status indicators */
             --success: #4caf50;
             --warning: #ff9800;
             --error: #f44336;
-            
-            /* Layout units */
+            --space-xs: 8px;    /* Reduced from 16px */
+            --space-sm: 12px;   /* New intermediate size */
             --space: 16px;
-            --radius: 8px;
+            --radius: 6px;      /* Reduced from 8px */
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: system-ui, -apple-system, sans-serif;
             background: var(--black-base);
             color: var(--text-primary);
-            line-height: 1.5;
+            line-height: 1.4;
             -webkit-font-smoothing: antialiased;
-            padding: var(--space);
+            padding: var(--space-xs);
         }
 
         .container {
@@ -48,97 +39,70 @@
             margin: 0 auto;
         }
 
-        /* Primary action button */
         #nfcButton {
             width: 100%;
-            height: 56px;
+            height: 48px; /* Reduced from 56px */
             background: var(--accent);
             color: var(--text-primary);
             border: none;
             border-radius: var(--radius);
             font-size: 16px;
             font-weight: 500;
-            margin-bottom: var(--space);
+            margin-bottom: var(--space-xs);
             cursor: pointer;
-            transition: background 0.2s ease;
         }
 
-        #nfcButton:active {
-            background: var(--accent-hover);
-        }
-
-        /* Status displays */
         .status-container {
             background: var(--black-surface);
             border-radius: var(--radius);
-            padding: var(--space);
-            margin-bottom: var(--space);
+            padding: var(--space-xs);
+            margin-bottom: var(--space-xs);
         }
 
         .status {
             font-size: 14px;
             color: var(--text-secondary);
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
 
         .serial {
             font-family: monospace;
-            font-size: 16px;
+            font-size: 15px;
             color: var(--text-primary);
         }
 
-        .success { color: var(--success); }
-        .warning { color: var(--warning); }
-        .error { color: var(--error); }
-
-        /* QR Scanner container */
         .scanner-container {
             background: var(--black-surface);
             border-radius: var(--radius);
-            padding: var(--space);
-            margin-bottom: var(--space);
+            padding: var(--space-xs);
+            margin-bottom: var(--space-xs);
             overflow: hidden;
         }
 
-        #reader {
-            width: 100%;
-            background: var(--black-surface) !important;
-        }
+        #reader { width: 100%; background: var(--black-surface) !important; }
+        #reader select, #reader img[alt="Info icon"] { display: none !important; }
 
-        /* Hide QR scanner UI elements */
-        #reader select, 
-        #reader img[alt="Info icon"] {
-            display: none !important;
-        }
-
-        /* Control buttons */
         .controls {
             display: flex;
-            gap: var(--space);
-            margin-bottom: var(--space);
+            gap: var(--space-xs);
+            margin-bottom: var(--space-xs);
         }
 
         .controls button {
             flex: 1;
-            height: 44px;
+            height: 40px; /* Reduced from 44px */
             background: var(--black-elevated);
             color: var(--text-primary);
             border: none;
             border-radius: var(--radius);
             font-size: 14px;
             cursor: pointer;
-            transition: background 0.2s ease;
         }
 
-        .controls button:active {
-            opacity: 0.9;
-        }
-
-        /* Data table */
         .table-container {
             background: var(--black-surface);
             border-radius: var(--radius);
-            padding: var(--space);
+            padding: var(--space-xs);
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
@@ -151,43 +115,46 @@
             table-layout: fixed;
         }
 
-        /* Column distribution */
-        th:nth-child(1), td:nth-child(1) { width: 10%; }  /* Delete */
+        /* Updated column distribution: 20-40-40 */
+        th:nth-child(1), td:nth-child(1) { width: 20%; }  /* Delete */
         th:nth-child(2), td:nth-child(2) { width: 40%; }  /* NFC */
-        th:nth-child(3), td:nth-child(3) { width: 50%; }  /* QR */
+        th:nth-child(3), td:nth-child(3) { width: 40%; }  /* QR */
 
         th {
             text-align: left;
-            padding: 12px 16px;
+            padding: var(--space-xs) var(--space-sm);
             color: var(--text-secondary);
             font-weight: normal;
             border-bottom: 1px solid var(--black-elevated);
         }
 
         td {
-            padding: 12px 16px;
+            padding: var(--space-xs) var(--space-sm);
             border-bottom: 1px solid var(--black-elevated);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        /* Delete button styling */
+        /* Centered delete button */
+        td:first-child {
+            text-align: center;
+        }
+
         td button {
-            width: 28px;
-            height: 28px;
+            width: 24px;
+            height: 24px;
             background: var(--error);
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             opacity: 0.8;
-            transition: opacity 0.2s ease;
         }
 
-        td button:active {
-            opacity: 1;
-        }
+        .success { color: var(--success); }
+        .warning { color: var(--warning); }
+        .error { color: var(--error); }
     </style>
 </head>
 <body>
@@ -213,7 +180,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th></th>
+                        <th>Delete</th>
                         <th>NFC ID</th>
                         <th>QR Code</th>
                     </tr>
@@ -267,7 +234,6 @@
                     this.updateNFCStatus('Scanning for NFC tag...', 'warning');
                     
                     ndef.addEventListener("reading", ({ serialNumber }) => {
-                        // Check for duplicate NFC
                         if (this.mappings.has(serialNumber)) {
                             this.updateNFCStatus('NFC tag already mapped!', 'error', serialNumber);
                             if (navigator.vibrate) navigator.vibrate([100, 100, 100, 100]);
@@ -294,7 +260,6 @@
             handleQRCode(qrCode) {
                 if (!this.currentNFCSerial) return;
 
-                // Check for duplicate QR code
                 for (const [_, existingQR] of this.mappings) {
                     if (existingQR === qrCode) {
                         document.getElementById('qrStatus').textContent = 'QR code already mapped!';
@@ -304,7 +269,6 @@
                     }
                 }
 
-                // Process valid mapping
                 this.mappings.set(this.currentNFCSerial, qrCode);
                 this.timestamps.set(this.currentNFCSerial, Date.now());
                 document.getElementById('qrStatus').textContent = 'Paired Successfully';
@@ -323,7 +287,6 @@
                 const tbody = document.getElementById('mappingTable');
                 tbody.innerHTML = '';
                 
-                // Sort entries by timestamp (newest first)
                 const entries = Array.from(this.mappings.entries())
                     .map(([nfc, qr]) => ({
                         nfc: nfc.replace(/:/g, ''),
@@ -335,19 +298,16 @@
                 for (const entry of entries) {
                     const row = tbody.insertRow();
                     
-                    // Delete button
                     const deleteCell = row.insertCell(0);
                     const deleteButton = document.createElement('button');
                     deleteButton.textContent = '×';
                     deleteButton.onclick = () => this.deleteMapping(entry.nfc);
                     deleteCell.appendChild(deleteButton);
                     
-                    // NFC ID
                     const nfcCell = row.insertCell(1);
                     nfcCell.textContent = entry.nfc;
                     nfcCell.title = entry.nfc;
                     
-                    // QR Code
                     const qrCell = row.insertCell(2);
                     qrCell.textContent = entry.qr;
                     qrCell.title = entry.qr;
@@ -409,7 +369,6 @@
             }
         }
 
-        // Initialize application
         const mapper = new NFCQRMapper();
     </script>
 </body>
